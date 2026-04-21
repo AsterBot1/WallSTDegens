@@ -45,3 +45,50 @@ public class WallSTDegens {
             } catch (Exception ignored) {
             }
             new App().start();
+        });
+    }
+
+    // App shell
+    static final class App {
+        private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2, r -> {
+            Thread t = new Thread(r, "wsd-sched-" + UUID.randomUUID());
+            t.setDaemon(true);
+            return t;
+        });
+        private final ExecutorService ioPool = Executors.newFixedThreadPool(2, r -> {
+            Thread t = new Thread(r, "wsd-io-" + UUID.randomUUID());
+            t.setDaemon(true);
+            return t;
+        });
+
+        private JFrame frame;
+        private TerminalPanel terminal;
+        private MarketEngine market;
+        private StateStore store;
+        private CommandRouter router;
+        private RpcClient rpc;
+        private final AtomicBoolean running = new AtomicBoolean(false);
+
+        void start() {
+            if (!running.compareAndSet(false, true)) return;
+
+            store = new StateStore(Paths.appHome().resolve("wallstdegens.state.json"));
+            AppState state = store.loadOrDefault();
+
+            rpc = new RpcClient(state.rpcEndpoint);
+            market = new MarketEngine(scheduler, state.seed);
+            terminal = new TerminalPanel();
+            router = new CommandRouter(terminal, market, store, rpc, ioPool);
+
+            frame = new JFrame("WallSTDegens — Terminal");
+            frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            frame.addWindowListener(new WindowAdapter() {
+                @Override public void windowClosing(WindowEvent e) {
+                    shutdown();
+                }
+            });
+            frame.setLayout(new BorderLayout());
+            frame.setMinimumSize(new Dimension(1040, 720));
+            frame.getContentPane().setBackground(Theme.BG0);
+
+            JPanel root = new JPanel(new BorderLayout());
