@@ -186,3 +186,50 @@ public class WallSTDegens {
               .append("\n");
 
             sb.append(Ansi.dim("seed: ")).append(Ansi.yellow(Long.toHexString(state.seed))).append("   ")
+              .append(Ansi.dim("rpc: ")).append(Ansi.yellow(state.rpcEndpoint)).append("\n");
+
+            sb.append(Ansi.dim("type ")).append(Ansi.cyan("help")).append(Ansi.dim(" to see command map. "))
+              .append(Ansi.dim("style: 'AI finance terminal like bloomberg for degens'")).append("\n");
+            return sb.toString();
+        }
+    }
+
+    // Theme
+    static final class Theme {
+        static final Color BG0 = new Color(10, 12, 14);
+        static final Color BG1 = new Color(16, 18, 22);
+        static final Color BG2 = new Color(28, 33, 40);
+        static final Color FG0 = new Color(218, 224, 230);
+        static final Color FG1 = new Color(167, 175, 183);
+        static final Color ACC = new Color(255, 170, 0);
+        static final Color ACC2 = new Color(0, 202, 255);
+        static final Color GOOD = new Color(68, 230, 140);
+        static final Color BAD = new Color(255, 88, 88);
+        static final Color WARN = new Color(255, 200, 84);
+        static final Font MONO_12 = new Font(Font.MONOSPACED, Font.PLAIN, 12);
+        static final Font MONO_13 = new Font(Font.MONOSPACED, Font.PLAIN, 13);
+        static final Font MONO_14 = new Font(Font.MONOSPACED, Font.PLAIN, 14);
+        static final Font MONO_16 = new Font(Font.MONOSPACED, Font.PLAIN, 16);
+    }
+
+    // Terminal + log model
+    static final class TerminalPanel extends JPanel {
+        private final JTextPane text = new JTextPane();
+        private final JScrollPane scroll;
+        private final JTextField input = new JTextField();
+        private Consumer<String> onCommand = s -> {};
+        private final TerminalDoc doc = new TerminalDoc();
+
+        private final Deque<HistoryEntry> history = new ArrayDeque<>();
+        private int historyCursor = 0;
+
+        private volatile MarketPrint lastPrint;
+        private volatile MarketSignal lastSignal;
+
+        TerminalPanel() {
+            super(new BorderLayout());
+            setBackground(Theme.BG0);
+            setBorder(new EmptyBorder(10, 10, 10, 10));
+
+            text.setEditable(false);
+            text.setBackground(Theme.BG0);
