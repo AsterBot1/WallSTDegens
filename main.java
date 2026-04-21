@@ -92,3 +92,50 @@ public class WallSTDegens {
             frame.getContentPane().setBackground(Theme.BG0);
 
             JPanel root = new JPanel(new BorderLayout());
+            root.setBackground(Theme.BG0);
+            root.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+            TopBar top = new TopBar(state, terminal, router, market, store, rpc);
+            root.add(top, BorderLayout.NORTH);
+
+            JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+            split.setResizeWeight(0.72);
+            split.setBorder(null);
+            split.setDividerSize(8);
+            split.setBackground(Theme.BG0);
+
+            JPanel left = new JPanel(new BorderLayout());
+            left.setBackground(Theme.BG0);
+            left.setBorder(BorderFactory.createLineBorder(Theme.BG2));
+            left.add(terminal, BorderLayout.CENTER);
+
+            RightDock dock = new RightDock(market, terminal, router, state);
+            split.setLeftComponent(left);
+            split.setRightComponent(dock);
+
+            root.add(split, BorderLayout.CENTER);
+
+            StatusBar statusBar = new StatusBar(state, market, rpc);
+            root.add(statusBar, BorderLayout.SOUTH);
+
+            frame.setContentPane(root);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+
+            terminal.printBanner(Banner.compose(state));
+            router.bootstrap();
+
+            market.setListener(new MarketListener() {
+                @Override public void onQuote(MarketQuote q) {
+                    dock.onQuote(q);
+                    statusBar.onQuote(q);
+                }
+                @Override public void onPrint(MarketPrint p) {
+                    dock.onPrint(p);
+                    terminal.onPrint(p);
+                }
+                @Override public void onSignal(MarketSignal s) {
+                    dock.onSignal(s);
+                    terminal.onSignal(s);
+                }
