@@ -139,3 +139,50 @@ public class WallSTDegens {
                     dock.onSignal(s);
                     terminal.onSignal(s);
                 }
+            });
+            market.start();
+
+            terminal.setOnCommand(line -> router.handle(line));
+
+            terminal.installKeymap(frame.getRootPane());
+
+            scheduler.scheduleAtFixedRate(() -> SwingUtilities.invokeLater(statusBar::tick), 250, 250, TimeUnit.MILLISECONDS);
+        }
+
+        private void shutdown() {
+            if (!running.compareAndSet(true, false)) return;
+            terminal.println("");
+            terminal.println(Ansi.dim("closing... writing state, draining streams"));
+
+            try {
+                store.save(router.captureState());
+            } catch (Exception e) {
+                terminal.println(Ansi.red("state save failed: ") + e.getMessage());
+            }
+
+            try { market.stop(); } catch (Exception ignored) {}
+            try { scheduler.shutdownNow(); } catch (Exception ignored) {}
+            try { ioPool.shutdownNow(); } catch (Exception ignored) {}
+            try { frame.dispose(); } catch (Exception ignored) {}
+        }
+    }
+
+    // Banner
+    static final class Banner {
+        static String compose(AppState state) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(Ansi.bold("WALLSTDEGENS")).append("  ")
+              .append(Ansi.dim("v")).append(Ansi.dim(state.version)).append("  ")
+              .append(Ansi.dim("pid:")).append(Ansi.dim(String.valueOf(ProcessHandle.current().pid()))).append("  ")
+              .append(Ansi.dim("jvm:")).append(Ansi.dim(System.getProperty("java.version"))).append("\n");
+
+            sb.append(Ansi.dim("hotkeys: "))
+              .append(Ansi.cyan("Ctrl+K")).append(Ansi.dim(" command  "))
+              .append(Ansi.cyan("Ctrl+L")).append(Ansi.dim(" clear  "))
+              .append(Ansi.cyan("Ctrl+W")).append(Ansi.dim(" watch  "))
+              .append(Ansi.cyan("Ctrl+E")).append(Ansi.dim(" export  "))
+              .append(Ansi.cyan("Ctrl+R")).append(Ansi.dim(" rpc  "))
+              .append(Ansi.cyan("Ctrl+Q")).append(Ansi.dim(" quit"))
+              .append("\n");
+
+            sb.append(Ansi.dim("seed: ")).append(Ansi.yellow(Long.toHexString(state.seed))).append("   ")
