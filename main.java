@@ -233,3 +233,50 @@ public class WallSTDegens {
 
             text.setEditable(false);
             text.setBackground(Theme.BG0);
+            text.setForeground(Theme.FG0);
+            text.setFont(Theme.MONO_13);
+            text.setCaretColor(Theme.ACC2);
+            text.setDocument(doc.swingDocument());
+            text.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+
+            scroll = new JScrollPane(text);
+            scroll.setBorder(null);
+            scroll.getViewport().setBackground(Theme.BG0);
+            scroll.getVerticalScrollBar().setUI(new MinimalScrollUI());
+
+            JPanel inputRow = new JPanel(new BorderLayout());
+            inputRow.setBackground(Theme.BG0);
+            inputRow.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Theme.BG2));
+
+            JLabel prompt = new JLabel("  > ");
+            prompt.setForeground(Theme.ACC);
+            prompt.setBackground(Theme.BG0);
+            prompt.setFont(Theme.MONO_14);
+            prompt.setOpaque(true);
+
+            input.setBackground(Theme.BG0);
+            input.setForeground(Theme.FG0);
+            input.setCaretColor(Theme.ACC2);
+            input.setBorder(new EmptyBorder(8, 6, 8, 6));
+            input.setFont(Theme.MONO_14);
+
+            input.addActionListener(e -> {
+                String line = input.getText();
+                if (line == null) line = "";
+                line = line.trim();
+                if (line.isEmpty()) return;
+                remember(line);
+                input.setText("");
+                println(Ansi.dim("> ") + line);
+                onCommand.accept(line);
+            });
+
+            input.addKeyListener(new KeyAdapter() {
+                @Override public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_UP) {
+                        e.consume();
+                        String s = historyUp();
+                        if (s != null) input.setText(s);
+                    } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                        e.consume();
+                        String s = historyDown();
