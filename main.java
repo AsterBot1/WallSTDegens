@@ -750,3 +750,50 @@ public class WallSTDegens {
 
         private void cmdQuote(String[] parts) {
             if (parts.length < 2) { terminal.notifyWarn("usage: quote SYM"); return; }
+            String sym = parts[1].toUpperCase(Locale.ROOT);
+            MarketQuote q = market.quote(sym);
+            if (q == null) { terminal.notifyWarn("unknown sym: " + sym); return; }
+            terminal.println("");
+            terminal.println(Ansi.bold("QUOTE ") + sym);
+            terminal.println("mid " + Format.fmtPx(q.mid, 6) + "   spr " + Format.fmtSigned(q.spreadBps / 100.0, 2) + "bp   fnd " + Format.fmtSigned(q.fundingBps / 100.0, 2) + "bp");
+            terminal.println("oi  " + Format.compact(q.openInterest) + "   vol1m " + Format.fmt(q.vol1m, 4) + "   drift " + Format.fmtSigned(q.changeBps / 100.0, 2) + "bp");
+            terminal.println("time " + Format.ts(q.ts));
+            terminal.println("");
+        }
+
+        private void cmdTape(String[] parts) {
+            String sym = parts.length >= 2 ? parts[1].toUpperCase(Locale.ROOT) : null;
+            int n = parts.length >= 3 ? Parse.i(parts[2], 16) : 16;
+            n = Math.max(1, Math.min(80, n));
+            List<MarketPrint> prints = sym == null ? market.tapeLatest(n) : market.tapeLatest(sym, n);
+            terminal.println("");
+            terminal.println(Ansi.bold("TAPE ") + (sym == null ? "(all)" : sym));
+            for (MarketPrint p : prints) {
+                terminal.println(formatPrint(p));
+            }
+            terminal.println("");
+        }
+
+        private void cmdSignals(String[] parts) {
+            String sym = parts.length >= 2 ? parts[1].toUpperCase(Locale.ROOT) : null;
+            int n = parts.length >= 3 ? Parse.i(parts[2], 12) : 12;
+            n = Math.max(1, Math.min(80, n));
+            List<MarketSignal> sigs = sym == null ? market.signalsLatest(n) : market.signalsLatest(sym, n);
+            terminal.println("");
+            terminal.println(Ansi.bold("SIGNALS ") + (sym == null ? "(all)" : sym));
+            for (MarketSignal s : sigs) {
+                terminal.println(formatSignal(s));
+            }
+            terminal.println("");
+        }
+
+        private void cmdWatch(String[] parts) {
+            if (parts.length == 1) {
+                terminal.println("");
+                terminal.println(Ansi.bold("WATCHLIST"));
+                if (watch.size() == 0) terminal.println(Ansi.dim("(empty)"));
+                for (String sym : watch.asList()) {
+                    MarketQuote q = market.quote(sym);
+                    if (q == null) continue;
+                    String px = Format.fmtPx(q.mid, 6);
+                    String ch = Format.fmtSigned(q.changeBps / 100.0, 2) + "bp";
