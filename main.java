@@ -891,3 +891,50 @@ public class WallSTDegens {
             } else if (sub.equals("ping")) {
                 terminal.notifyInfo("rpc ping...");
                 ioPool.submit(() -> {
+                    try {
+                        long ms = rpc.ping();
+                        SwingUtilities.invokeLater(() -> terminal.notifyInfo("rpc ok " + ms + "ms"));
+                    } catch (Exception e) {
+                        SwingUtilities.invokeLater(() -> terminal.notifyError("rpc ping failed: " + e.getMessage()));
+                    }
+                });
+            } else if (sub.equals("call") && parts.length >= 3) {
+                String method = parts[2];
+                String params = parts.length >= 4 ? parts[3] : "[]";
+                terminal.notifyInfo("rpc call " + method + " ...");
+                ioPool.submit(() -> {
+                    try {
+                        String res = rpc.call(method, params);
+                        SwingUtilities.invokeLater(() -> {
+                            terminal.println("");
+                            terminal.println(Ansi.bold("RPC RESULT"));
+                            terminal.println(res);
+                            terminal.println("");
+                        });
+                    } catch (Exception e) {
+                        SwingUtilities.invokeLater(() -> terminal.notifyError("rpc call failed: " + e.getMessage()));
+                    }
+                });
+            } else {
+                terminal.notifyWarn("usage: rpc | rpc set URL | rpc ping | rpc call METHOD PARAMS_JSON");
+            }
+        }
+
+        private void cmdSnapshot(String[] parts) {
+            if (parts.length < 2) { terminal.notifyWarn("usage: snapshot SYM"); return; }
+            String sym = parts[1].toUpperCase(Locale.ROOT);
+            MarketQuote q = market.quote(sym);
+            if (q == null) { terminal.notifyWarn("unknown sym: " + sym); return; }
+
+            terminal.println("");
+            terminal.println(Ansi.bold("SNAPSHOT ") + sym);
+            terminal.println(Ansi.dim("note: ") + "this is a placeholder eth_call builder; wire it to your contract ABI if desired.");
+
+            String fakeTo = "0x6ba2FaC13d1f942411d2C59B025B9bE43A74d726";
+            String data = "0x" + Hex.repeat("ab", 4) + Hex.padLeft(Hex.ofAscii(sym), 64);
+
+            terminal.println("to   " + fakeTo);
+            terminal.println("data " + data);
+            terminal.println("rpc  " + rpc.endpoint);
+
+            terminal.println(Ansi.dim("try: ") + "rpc call eth_call " + Json.arr(Json.obj("to", fakeTo, "data", data), "latest"));
