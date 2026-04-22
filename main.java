@@ -562,3 +562,50 @@ public class WallSTDegens {
         private JButton miniBtn(String text) {
             JButton b = new JButton(text);
             b.setFont(Theme.MONO_12);
+            b.setFocusPainted(false);
+            b.setBackground(Theme.BG1);
+            b.setForeground(Theme.FG0);
+            b.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Theme.BG2),
+                    new EmptyBorder(6, 10, 6, 10)
+            ));
+            b.addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { b.setBackground(Theme.BG2); }
+                @Override public void mouseExited(MouseEvent e) { b.setBackground(Theme.BG1); }
+            });
+            return b;
+        }
+    }
+
+    static final class StatusBar extends JPanel {
+        private final JLabel left = new JLabel();
+        private final JLabel right = new JLabel();
+        private final AppState state;
+        private final MarketEngine market;
+        private final RpcClient rpc;
+        private volatile MarketQuote last;
+        private long start = System.currentTimeMillis();
+
+        StatusBar(AppState state, MarketEngine market, RpcClient rpc) {
+            super(new BorderLayout());
+            this.state = state;
+            this.market = market;
+            this.rpc = rpc;
+            setBackground(Theme.BG0);
+            setBorder(new EmptyBorder(8, 0, 0, 0));
+            left.setFont(Theme.MONO_12);
+            left.setForeground(Theme.FG1);
+            right.setFont(Theme.MONO_12);
+            right.setForeground(Theme.FG1);
+            add(left, BorderLayout.WEST);
+            add(right, BorderLayout.EAST);
+            tick();
+        }
+
+        void onQuote(MarketQuote q) { last = q; }
+
+        void tick() {
+            long up = System.currentTimeMillis() - start;
+            String uptime = Format.dur(up);
+            String mode = market.modeLabel();
+            String heap = Format.mem();
