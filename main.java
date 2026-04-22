@@ -1126,3 +1126,50 @@ public class WallSTDegens {
         }
     }
 
+    // Market engine
+    interface MarketListener {
+        void onQuote(MarketQuote q);
+        void onPrint(MarketPrint p);
+        void onSignal(MarketSignal s);
+    }
+
+    static final class MarketEngine {
+        private final ScheduledExecutorService scheduler;
+        private final long seed;
+        private final Random rng;
+        private volatile MarketListener listener = null;
+        private final AtomicBoolean run = new AtomicBoolean(false);
+        private final AtomicBoolean panic = new AtomicBoolean(false);
+
+        private final ConcurrentHashMap<String, MarketQuote> quotes = new ConcurrentHashMap<>();
+        private final Deque<MarketPrint> tape = new ArrayDeque<>();
+        private final Deque<MarketSignal> signals = new ArrayDeque<>();
+
+        private final List<String> symbols;
+        private final Map<String, InstrumentProfile> profiles = new HashMap<>();
+
+        MarketEngine(ScheduledExecutorService scheduler, long seed) {
+            this.scheduler = scheduler;
+            this.seed = seed;
+            this.rng = new Random(seed ^ 0xD3C9A1B9F00D1234L);
+            this.symbols = Arrays.asList(
+                    "BTC-PERP", "ETH-PERP", "SOL-PERP", "DOGE-PERP", "PEPE-PERP", "ARB-PERP",
+                    "SPX-INDEX", "NDQ-INDEX", "DXY", "US10Y", "WIF-PERP", "TIA-PERP",
+                    "LINK-PERP", "AVAX-PERP", "BNB-PERP", "OP-PERP"
+            );
+            initProfiles();
+            initQuotes();
+        }
+
+        void setListener(MarketListener l) { this.listener = l; }
+        List<String> symbols() { return new ArrayList<>(symbols); }
+        boolean known(String sym) { return profiles.containsKey(sym); }
+
+        MarketQuote quote(String sym) { return quotes.get(sym); }
+
+        List<MarketPrint> tapeLatest(int n) {
+            synchronized (tape) {
+                List<MarketPrint> out = new ArrayList<>();
+                Iterator<MarketPrint> it = tape.descendingIterator();
+                while (it.hasNext() && out.size() < n) out.add(it.next());
+                Collections.reverse(out);
