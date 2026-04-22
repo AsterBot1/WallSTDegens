@@ -938,3 +938,50 @@ public class WallSTDegens {
             terminal.println("rpc  " + rpc.endpoint);
 
             terminal.println(Ansi.dim("try: ") + "rpc call eth_call " + Json.arr(Json.obj("to", fakeTo, "data", data), "latest"));
+            terminal.println("");
+        }
+
+        private String formatPrint(MarketPrint p) {
+            String side = p.side > 0 ? (p.side == 1 ? Ansi.green("BUY ") : Ansi.red("SELL")) : Ansi.dim("----");
+            String px = Format.fmtPx(p.px, 6);
+            String qty = Format.compact(Math.abs(p.qty));
+            String t = Format.ts(p.ts);
+            return String.format(Locale.ROOT, "%s  %-10s  %14s  %10s  %s", t, p.symbol, px, qty, side);
+        }
+
+        private String formatSignal(MarketSignal s) {
+            String t = Format.ts(s.ts);
+            String score = Format.fmtSigned(s.score / 100.0, 2);
+            String tone = s.score >= 0 ? Ansi.green(score) : Ansi.red(score);
+            return String.format(Locale.ROOT, "%s  %-10s  %10s  tag %-10s  %s", t, s.symbol, tone, s.tag, Ansi.dim(s.note));
+        }
+    }
+
+    // Watchlist
+    static final class Watchlist {
+        private final LinkedHashSet<String> set = new LinkedHashSet<>();
+        void add(String sym) { set.add(sym); }
+        void remove(String sym) { set.remove(sym); }
+        void clear() { set.clear(); }
+        int size() { return set.size(); }
+        List<String> asList() { return new ArrayList<>(set); }
+        void setAll(List<String> s) { set.clear(); if (s != null) for (String x : s) if (x != null && !x.isBlank()) set.add(x.trim().toUpperCase(Locale.ROOT)); }
+        boolean has(String sym) { return set.contains(sym); }
+    }
+
+    // Right dock panels
+    static final class RightDock extends JPanel {
+        private final QuoteTableModel quoteModel;
+        private final TapeTableModel tapeModel;
+        private final SignalTableModel sigModel;
+
+        RightDock(MarketEngine market, TerminalPanel terminal, CommandRouter router, AppState state) {
+            super(new BorderLayout());
+            setBackground(Theme.BG0);
+            setBorder(BorderFactory.createLineBorder(Theme.BG2));
+
+            JTabbedPane tabs = new JTabbedPane();
+            tabs.setFont(Theme.MONO_12);
+            tabs.setBackground(Theme.BG0);
+            tabs.setForeground(Theme.FG0);
+            tabs.setBorder(null);
