@@ -421,3 +421,50 @@ public class WallSTDegens {
 
         void appendLine(String raw) {
             doc.append(raw);
+            doc.append("\n");
+        }
+    }
+
+    static final class DefaultStyledDocumentWithTokens extends javax.swing.text.DefaultStyledDocument {
+        private final javax.swing.text.SimpleAttributeSet base = new javax.swing.text.SimpleAttributeSet();
+        private final Map<String, javax.swing.text.SimpleAttributeSet> styles = new HashMap<>();
+
+        DefaultStyledDocumentWithTokens() {
+            javax.swing.text.StyleConstants.setFontFamily(base, Font.MONOSPACED);
+            javax.swing.text.StyleConstants.setFontSize(base, 13);
+            javax.swing.text.StyleConstants.setForeground(base, Theme.FG0);
+            styles.put("dim", style(Theme.FG1, false));
+            styles.put("bold", style(Theme.FG0, true));
+            styles.put("cyan", style(Theme.ACC2, false));
+            styles.put("y", style(Theme.WARN, false));
+            styles.put("r", style(Theme.BAD, false));
+            styles.put("g", style(Theme.GOOD, false));
+            styles.put("o", style(Theme.ACC, false));
+        }
+
+        private javax.swing.text.SimpleAttributeSet style(Color c, boolean bold) {
+            javax.swing.text.SimpleAttributeSet s = new javax.swing.text.SimpleAttributeSet();
+            javax.swing.text.StyleConstants.setFontFamily(s, Font.MONOSPACED);
+            javax.swing.text.StyleConstants.setFontSize(s, 13);
+            javax.swing.text.StyleConstants.setForeground(s, c);
+            javax.swing.text.StyleConstants.setBold(s, bold);
+            return s;
+        }
+
+        void clearAll() {
+            try {
+                remove(0, getLength());
+            } catch (BadLocationException ignored) {
+            }
+        }
+
+        void append(String raw) {
+            if (raw == null) raw = "";
+            int i = 0;
+            String current = null;
+            StringBuilder buf = new StringBuilder();
+            while (i < raw.length()) {
+                int open = raw.indexOf("\u241B[", i);
+                if (open < 0) {
+                    buf.append(raw.substring(i));
+                    break;
