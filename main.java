@@ -609,3 +609,50 @@ public class WallSTDegens {
             String uptime = Format.dur(up);
             String mode = market.modeLabel();
             String heap = Format.mem();
+            String rpcEp = rpc.endpoint;
+            left.setText("  " + "uptime " + uptime + "   " + "mode " + mode + "   " + "heap " + heap);
+            MarketQuote q = last;
+            if (q == null) {
+                right.setText("rpc " + rpcEp + "   seed " + Long.toHexString(state.seed) + "  ");
+            } else {
+                String px = Format.fmtPx(q.mid, 4);
+                String ch = Format.fmtSigned(q.changeBps / 100.0, 2) + "bp";
+                right.setText(q.symbol + " " + px + "   " + ch + "   rpc " + rpcEp + "  ");
+            }
+        }
+    }
+
+    // Commands & router
+    static final class CommandRouter {
+        private final TerminalPanel terminal;
+        private final MarketEngine market;
+        private final StateStore store;
+        private final RpcClient rpc;
+        private final ExecutorService ioPool;
+
+        private final Watchlist watch = new Watchlist();
+        private String page = "HOME";
+        private boolean showTape = true;
+        private boolean showSignals = true;
+
+        CommandRouter(TerminalPanel terminal, MarketEngine market, StateStore store, RpcClient rpc, ExecutorService ioPool) {
+            this.terminal = terminal;
+            this.market = market;
+            this.store = store;
+            this.rpc = rpc;
+            this.ioPool = ioPool;
+        }
+
+        void bootstrap() {
+            AppState st = store.loadOrDefault();
+            watch.setAll(st.watchlist);
+            if (st.page != null && !st.page.isBlank()) page = st.page;
+            showTape = st.showTape;
+            showSignals = st.showSignals;
+            terminal.println(Ansi.dim("restored: ") + "page=" + page + " watch=" + watch.size() + " rpc=" + st.rpcEndpoint);
+            handle("pages");
+            handle("watch");
+        }
+
+        AppState captureState() {
+            AppState st = store.loadOrDefault();
