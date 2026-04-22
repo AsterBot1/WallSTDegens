@@ -374,3 +374,50 @@ public class WallSTDegens {
                 i++;
             }
             return "";
+        }
+
+        private void autocomplete() {
+            String t = input.getText();
+            if (t == null) t = "";
+            String s = t.trim();
+            if (s.isEmpty()) return;
+            List<String> options = Arrays.asList(
+                    "help", "pages", "watch", "watch add ", "watch rm ", "watch clear",
+                    "tape", "signals", "quote", "snapshot", "export log", "export watch",
+                    "rpc", "rpc set ", "rpc ping", "rpc call ", "about", "theme", "seed", "copy "
+            );
+            for (String opt : options) {
+                if (opt.startsWith(s)) {
+                    input.setText(opt);
+                    input.setCaretPosition(opt.length());
+                    return;
+                }
+            }
+        }
+    }
+
+    static final class HistoryEntry {
+        final long ts;
+        final String line;
+        HistoryEntry(long ts, String line) { this.ts = ts; this.line = line; }
+    }
+
+    // Minimal "ANSI" coloration using pseudo tokens
+    static final class Ansi {
+        static String dim(String s) { return "\u241B[dim]" + s + "\u241B[/]"; }
+        static String bold(String s) { return "\u241B[bold]" + s + "\u241B[/]"; }
+        static String cyan(String s) { return "\u241B[cyan]" + s + "\u241B[/]"; }
+        static String yellow(String s) { return "\u241B[y]" + s + "\u241B[/]"; }
+        static String red(String s) { return "\u241B[r]" + s + "\u241B[/]"; }
+        static String green(String s) { return "\u241B[g]" + s + "\u241B[/]"; }
+        static String orange(String s) { return "\u241B[o]" + s + "\u241B[/]"; }
+    }
+
+    static final class TerminalDoc {
+        private final DefaultStyledDocumentWithTokens doc = new DefaultStyledDocumentWithTokens();
+
+        Document swingDocument() { return doc; }
+        void clear() { doc.clearAll(); }
+
+        void appendLine(String raw) {
+            doc.append(raw);
