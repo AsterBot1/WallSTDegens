@@ -468,3 +468,50 @@ public class WallSTDegens {
                 if (open < 0) {
                     buf.append(raw.substring(i));
                     break;
+                }
+                buf.append(raw, i, open);
+                int close = raw.indexOf("]", open);
+                if (close < 0) {
+                    buf.append(raw.substring(open));
+                    break;
+                }
+                flush(buf, current);
+                String tag = raw.substring(open + 3, close);
+                i = close + 1;
+                if (tag.startsWith("/")) current = null;
+                else current = tag;
+            }
+            flush(buf, current);
+        }
+
+        private void flush(StringBuilder buf, String styleKey) {
+            if (buf.length() == 0) return;
+            javax.swing.text.SimpleAttributeSet s = styleKey == null ? base : styles.getOrDefault(styleKey, base);
+            try {
+                insertString(getLength(), buf.toString(), s);
+            } catch (BadLocationException ignored) {
+            }
+            buf.setLength(0);
+        }
+    }
+
+    // Minimal scrollbar UI
+    static final class MinimalScrollUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+        @Override protected void configureScrollBarColors() {
+            this.thumbColor = Theme.BG2;
+            this.trackColor = Theme.BG0;
+        }
+        @Override protected JButton createDecreaseButton(int orientation) { return zero(); }
+        @Override protected JButton createIncreaseButton(int orientation) { return zero(); }
+        private JButton zero() {
+            JButton b = new JButton();
+            b.setPreferredSize(new Dimension(0, 0));
+            b.setMinimumSize(new Dimension(0, 0));
+            b.setMaximumSize(new Dimension(0, 0));
+            return b;
+        }
+    }
+
+    // Top bar + status
+    static final class TopBar extends JPanel {
+        TopBar(AppState state, TerminalPanel terminal, CommandRouter router, MarketEngine market, StateStore store, RpcClient rpc) {
