@@ -515,3 +515,50 @@ public class WallSTDegens {
     // Top bar + status
     static final class TopBar extends JPanel {
         TopBar(AppState state, TerminalPanel terminal, CommandRouter router, MarketEngine market, StateStore store, RpcClient rpc) {
+            super(new BorderLayout());
+            setBackground(Theme.BG0);
+            setBorder(new EmptyBorder(0, 0, 8, 0));
+
+            JLabel left = new JLabel(" WALLSTDEGENS / AI FINANCE TERMINAL ");
+            left.setForeground(Theme.ACC);
+            left.setFont(Theme.MONO_14);
+
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+            right.setBackground(Theme.BG0);
+
+            JButton help = miniBtn("HELP");
+            help.addActionListener(e -> router.handle("help"));
+
+            JButton pages = miniBtn("PAGES");
+            pages.addActionListener(e -> router.handle("pages"));
+
+            JButton watch = miniBtn("WATCH");
+            watch.addActionListener(e -> router.handle("watch"));
+
+            JButton rpcBtn = miniBtn("RPC");
+            rpcBtn.addActionListener(e -> router.handle("rpc"));
+
+            JButton export = miniBtn("EXPORT");
+            export.addActionListener(e -> router.handle("export log"));
+
+            JButton panic = miniBtn("PANIC");
+            panic.setForeground(Theme.BAD);
+            panic.addActionListener(e -> {
+                market.panic();
+                terminal.notifyWarn("panic toggled: vol spike + micro-liq mode");
+            });
+
+            right.add(help);
+            right.add(pages);
+            right.add(watch);
+            right.add(rpcBtn);
+            right.add(export);
+            right.add(panic);
+
+            add(left, BorderLayout.WEST);
+            add(right, BorderLayout.EAST);
+        }
+
+        private JButton miniBtn(String text) {
+            JButton b = new JButton(text);
+            b.setFont(Theme.MONO_12);
