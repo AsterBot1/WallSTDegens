@@ -797,3 +797,50 @@ public class WallSTDegens {
                     if (q == null) continue;
                     String px = Format.fmtPx(q.mid, 6);
                     String ch = Format.fmtSigned(q.changeBps / 100.0, 2) + "bp";
+                    String tone = q.changeBps >= 0 ? Ansi.green(ch) : Ansi.red(ch);
+                    terminal.println(String.format(Locale.ROOT, "%-10s  %14s  %12s  spr %7s  oi %10s",
+                            sym, px, tone, Format.fmtSigned(q.spreadBps / 100.0, 2) + "bp", Format.compact(q.openInterest)));
+                }
+                terminal.println("");
+                return;
+            }
+            String sub = parts[1].toLowerCase(Locale.ROOT);
+            if (sub.equals("add") && parts.length >= 3) {
+                String sym = parts[2].toUpperCase(Locale.ROOT);
+                if (!market.known(sym)) { terminal.notifyWarn("unknown sym: " + sym); return; }
+                watch.add(sym);
+                terminal.notifyInfo("watch + " + sym);
+            } else if ((sub.equals("rm") || sub.equals("remove")) && parts.length >= 3) {
+                String sym = parts[2].toUpperCase(Locale.ROOT);
+                watch.remove(sym);
+                terminal.notifyInfo("watch - " + sym);
+            } else if (sub.equals("clear")) {
+                watch.clear();
+                terminal.notifyWarn("watch cleared");
+            } else if (sub.equals("set") && parts.length >= 2) {
+                terminal.notifyWarn("usage: watch add|rm|clear");
+            } else {
+                terminal.notifyWarn("usage: watch | watch add SYM | watch rm SYM | watch clear");
+            }
+        }
+
+        private void cmdExport(String[] parts) {
+            if (parts.length < 2) { terminal.notifyWarn("usage: export log|watch"); return; }
+            String what = parts[1].toLowerCase(Locale.ROOT);
+            if (what.equals("watch")) {
+                Path out = Paths.appHome().resolve("export-watch-" + System.currentTimeMillis() + ".txt");
+                try {
+                    Files.writeString(out, String.join("\n", watch.asList()) + "\n", StandardCharsets.UTF_8);
+                    terminal.notifyInfo("exported watch -> " + out);
+                } catch (IOException e) {
+                    terminal.notifyError("export failed: " + e.getMessage());
+                }
+            } else if (what.equals("log")) {
+                Path out = Paths.appHome().resolve("export-log-" + System.currentTimeMillis() + ".txt");
+                try {
+                    Files.writeString(out, "(log export is best-effort; copy/paste from UI if needed)\n", StandardCharsets.UTF_8);
+                    terminal.notifyInfo("exported log stub -> " + out);
+                } catch (IOException e) {
+                    terminal.notifyError("export failed: " + e.getMessage());
+                }
+            } else {
