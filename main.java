@@ -1220,3 +1220,50 @@ public class WallSTDegens {
             scheduler.scheduleAtFixedRate(this::stepSignals, 420, 420, TimeUnit.MILLISECONDS);
         }
 
+        void stop() { run.set(false); }
+
+        void panic() { panic.set(!panic.get()); }
+
+        String modeLabel() { return panic.get() ? "PANIC" : "NORMAL"; }
+
+        private void initProfiles() {
+            profiles.put("BTC-PERP", new InstrumentProfile(64000, 0.006, 0.8, 0.5, 150_000_000));
+            profiles.put("ETH-PERP", new InstrumentProfile(3200, 0.009, 1.1, 0.7, 60_000_000));
+            profiles.put("SOL-PERP", new InstrumentProfile(145, 0.018, 1.9, 1.2, 12_000_000));
+            profiles.put("DOGE-PERP", new InstrumentProfile(0.18, 0.025, 3.5, 2.3, 6_500_000));
+            profiles.put("PEPE-PERP", new InstrumentProfile(0.000012, 0.035, 5.2, 3.2, 3_100_000));
+            profiles.put("ARB-PERP", new InstrumentProfile(1.21, 0.022, 2.6, 1.7, 8_400_000));
+            profiles.put("SPX-INDEX", new InstrumentProfile(5340, 0.002, 0.3, 0.2, 0));
+            profiles.put("NDQ-INDEX", new InstrumentProfile(18950, 0.0022, 0.35, 0.22, 0));
+            profiles.put("DXY", new InstrumentProfile(104.7, 0.0012, 0.18, 0.12, 0));
+            profiles.put("US10Y", new InstrumentProfile(4.31, 0.0018, 0.22, 0.14, 0));
+            profiles.put("WIF-PERP", new InstrumentProfile(2.4, 0.042, 6.5, 4.1, 2_600_000));
+            profiles.put("TIA-PERP", new InstrumentProfile(15.3, 0.024, 3.1, 1.9, 3_900_000));
+            profiles.put("LINK-PERP", new InstrumentProfile(17.8, 0.018, 2.2, 1.5, 7_300_000));
+            profiles.put("AVAX-PERP", new InstrumentProfile(37.4, 0.020, 2.5, 1.6, 4_800_000));
+            profiles.put("BNB-PERP", new InstrumentProfile(560, 0.008, 1.1, 0.8, 18_000_000));
+            profiles.put("OP-PERP", new InstrumentProfile(3.1, 0.023, 2.9, 1.8, 5_200_000));
+        }
+
+        private void initQuotes() {
+            for (String sym : symbols) {
+                InstrumentProfile p = profiles.get(sym);
+                double mid = p.anchor;
+                quotes.put(sym, new MarketQuote(sym, System.currentTimeMillis(), mid, 12, 4, p.baseOi, 0, 0.0));
+            }
+        }
+
+        private void stepQuotes() {
+            if (!run.get()) return;
+            long now = System.currentTimeMillis();
+            boolean pan = panic.get();
+            for (String sym : symbols) {
+                InstrumentProfile prof = profiles.get(sym);
+                MarketQuote prev = quotes.get(sym);
+                if (prev == null) continue;
+
+                double vol = prof.vol * (pan ? 1.7 : 1.0);
+                double shock = rng.nextGaussian() * vol;
+                if (pan && rng.nextDouble() < 0.04) shock += rng.nextGaussian() * vol * 4.3;
+                double mid = Math.max(prof.floor, prev.mid * (1.0 + shock));
+
