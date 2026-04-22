@@ -1032,3 +1032,50 @@ public class WallSTDegens {
     }
 
     static final class CellToneRenderer extends DefaultTableCellRenderer {
+        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            c.setBackground(isSelected ? Theme.BG2 : Theme.BG0);
+            setBorder(new EmptyBorder(0, 6, 0, 6));
+            setFont(Theme.MONO_12);
+            setForeground(Theme.FG0);
+            String txt = value == null ? "" : value.toString();
+            if (txt.startsWith("+")) setForeground(Theme.GOOD);
+            else if (txt.startsWith("-")) setForeground(Theme.BAD);
+            else if (txt.endsWith("!")) setForeground(Theme.WARN);
+            return c;
+        }
+    }
+
+    // Table models
+    static final class QuoteTableModel extends AbstractTableModel {
+        private final MarketEngine market;
+        private final String[] cols = {"SYM", "MID", "CHG(bp)", "SPR(bp)", "FND(bp)", "OI", "VOL1m"};
+        private final List<String> syms;
+
+        QuoteTableModel(MarketEngine market) {
+            this.market = market;
+            this.syms = new ArrayList<>(market.symbols());
+        }
+
+        void onQuote(MarketQuote q) { SwingUtilities.invokeLater(this::fireTableDataChanged); }
+
+        @Override public int getRowCount() { return syms.size(); }
+        @Override public int getColumnCount() { return cols.length; }
+        @Override public String getColumnName(int column) { return cols[column]; }
+
+        @Override public Object getValueAt(int rowIndex, int columnIndex) {
+            String sym = syms.get(rowIndex);
+            MarketQuote q = market.quote(sym);
+            if (q == null) return "";
+            switch (columnIndex) {
+                case 0: return sym;
+                case 1: return Format.fmtPx(q.mid, 6);
+                case 2: return (q.changeBps >= 0 ? "+" : "") + Format.fmt(q.changeBps / 100.0, 2);
+                case 3: return Format.fmtSigned(q.spreadBps / 100.0, 2);
+                case 4: return Format.fmtSigned(q.fundingBps / 100.0, 2);
+                case 5: return Format.compact(q.openInterest);
+                case 6: return Format.fmt(q.vol1m, 4);
+            }
+            return "";
+        }
+    }
