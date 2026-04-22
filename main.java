@@ -1079,3 +1079,50 @@ public class WallSTDegens {
             return "";
         }
     }
+
+    static final class TapeTableModel extends AbstractTableModel {
+        private final MarketEngine market;
+        private final String[] cols = {"TIME", "SYM", "PX", "QTY", "SIDE"};
+        TapeTableModel(MarketEngine market) { this.market = market; }
+        void onPrint(MarketPrint p) { SwingUtilities.invokeLater(this::fireTableDataChanged); }
+        @Override public int getRowCount() { return 30; }
+        @Override public int getColumnCount() { return cols.length; }
+        @Override public String getColumnName(int column) { return cols[column]; }
+        @Override public Object getValueAt(int rowIndex, int columnIndex) {
+            List<MarketPrint> p = market.tapeLatest(30);
+            if (rowIndex >= p.size()) return "";
+            MarketPrint x = p.get(rowIndex);
+            switch (columnIndex) {
+                case 0: return Format.ts(x.ts);
+                case 1: return x.symbol;
+                case 2: return Format.fmtPx(x.px, 6);
+                case 3: return Format.compact(Math.abs(x.qty));
+                case 4: return x.side == 1 ? "+BUY" : x.side == 2 ? "-SELL" : "----";
+            }
+            return "";
+        }
+    }
+
+    static final class SignalTableModel extends AbstractTableModel {
+        private final MarketEngine market;
+        private final String[] cols = {"TIME", "SYM", "SCORE", "TAG", "NOTE"};
+        SignalTableModel(MarketEngine market) { this.market = market; }
+        void onSignal(MarketSignal s) { SwingUtilities.invokeLater(this::fireTableDataChanged); }
+        @Override public int getRowCount() { return 24; }
+        @Override public int getColumnCount() { return cols.length; }
+        @Override public String getColumnName(int column) { return cols[column]; }
+        @Override public Object getValueAt(int rowIndex, int columnIndex) {
+            List<MarketSignal> s = market.signalsLatest(24);
+            if (rowIndex >= s.size()) return "";
+            MarketSignal x = s.get(rowIndex);
+            switch (columnIndex) {
+                case 0: return Format.ts(x.ts);
+                case 1: return x.symbol;
+                case 2: return (x.score >= 0 ? "+" : "") + Format.fmt(x.score / 100.0, 2);
+                case 3: return x.tag;
+                case 4: return x.note;
+            }
+            return "";
+        }
+    }
+
