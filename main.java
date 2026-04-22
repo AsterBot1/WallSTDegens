@@ -985,3 +985,50 @@ public class WallSTDegens {
             tabs.setBackground(Theme.BG0);
             tabs.setForeground(Theme.FG0);
             tabs.setBorder(null);
+
+            quoteModel = new QuoteTableModel(market);
+            tapeModel = new TapeTableModel(market);
+            sigModel = new SignalTableModel(market);
+
+            tabs.addTab("GRID", wrapTable(new JTable(quoteModel), 5));
+            tabs.addTab("TAPE", wrapTable(new JTable(tapeModel), 4));
+            tabs.addTab("ALPHA", wrapTable(new JTable(sigModel), 4));
+
+            tabs.addChangeListener(new ChangeListener() {
+                @Override public void stateChanged(ChangeEvent e) {
+                    terminal.focusInput();
+                }
+            });
+
+            add(tabs, BorderLayout.CENTER);
+        }
+
+        void onQuote(MarketQuote q) { quoteModel.onQuote(q); }
+        void onPrint(MarketPrint p) { tapeModel.onPrint(p); }
+        void onSignal(MarketSignal s) { sigModel.onSignal(s); }
+
+        private JScrollPane wrapTable(JTable t, int rowsHint) {
+            t.setFont(Theme.MONO_12);
+            t.setBackground(Theme.BG0);
+            t.setForeground(Theme.FG0);
+            t.setGridColor(Theme.BG2);
+            t.setRowHeight(22);
+            t.setFillsViewportHeight(true);
+            t.getTableHeader().setFont(Theme.MONO_12);
+            t.getTableHeader().setBackground(Theme.BG1);
+            t.getTableHeader().setForeground(Theme.ACC);
+            t.setDefaultRenderer(Object.class, new CellToneRenderer());
+            t.setSelectionBackground(Theme.BG2);
+            t.setSelectionForeground(Theme.FG0);
+            t.setShowHorizontalLines(true);
+            t.setShowVerticalLines(false);
+
+            JScrollPane sp = new JScrollPane(t);
+            sp.setBorder(null);
+            sp.getViewport().setBackground(Theme.BG0);
+            sp.getVerticalScrollBar().setUI(new MinimalScrollUI());
+            return sp;
+        }
+    }
+
+    static final class CellToneRenderer extends DefaultTableCellRenderer {
