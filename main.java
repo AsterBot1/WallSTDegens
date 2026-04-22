@@ -1173,3 +1173,50 @@ public class WallSTDegens {
                 Iterator<MarketPrint> it = tape.descendingIterator();
                 while (it.hasNext() && out.size() < n) out.add(it.next());
                 Collections.reverse(out);
+                return out;
+            }
+        }
+
+        List<MarketPrint> tapeLatest(String sym, int n) {
+            synchronized (tape) {
+                List<MarketPrint> out = new ArrayList<>();
+                Iterator<MarketPrint> it = tape.descendingIterator();
+                while (it.hasNext() && out.size() < n) {
+                    MarketPrint p = it.next();
+                    if (p.symbol.equals(sym)) out.add(p);
+                }
+                Collections.reverse(out);
+                return out;
+            }
+        }
+
+        List<MarketSignal> signalsLatest(int n) {
+            synchronized (signals) {
+                List<MarketSignal> out = new ArrayList<>();
+                Iterator<MarketSignal> it = signals.descendingIterator();
+                while (it.hasNext() && out.size() < n) out.add(it.next());
+                Collections.reverse(out);
+                return out;
+            }
+        }
+
+        List<MarketSignal> signalsLatest(String sym, int n) {
+            synchronized (signals) {
+                List<MarketSignal> out = new ArrayList<>();
+                Iterator<MarketSignal> it = signals.descendingIterator();
+                while (it.hasNext() && out.size() < n) {
+                    MarketSignal s = it.next();
+                    if (s.symbol.equals(sym)) out.add(s);
+                }
+                Collections.reverse(out);
+                return out;
+            }
+        }
+
+        void start() {
+            if (!run.compareAndSet(false, true)) return;
+            scheduler.scheduleAtFixedRate(this::stepQuotes, 80, 80, TimeUnit.MILLISECONDS);
+            scheduler.scheduleAtFixedRate(this::stepTape, 110, 110, TimeUnit.MILLISECONDS);
+            scheduler.scheduleAtFixedRate(this::stepSignals, 420, 420, TimeUnit.MILLISECONDS);
+        }
+
