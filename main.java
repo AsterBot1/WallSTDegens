@@ -656,3 +656,50 @@ public class WallSTDegens {
 
         AppState captureState() {
             AppState st = store.loadOrDefault();
+            st.watchlist = watch.asList();
+            st.page = page;
+            st.showTape = showTape;
+            st.showSignals = showSignals;
+            st.rpcEndpoint = rpc.endpoint;
+            return st;
+        }
+
+        void handle(String line) {
+            String[] parts = Split.smart(line);
+            if (parts.length == 0) return;
+            String cmd = parts[0].toLowerCase(Locale.ROOT);
+
+            switch (cmd) {
+                case "help": cmdHelp(); break;
+                case "pages": cmdPages(); break;
+                case "about": cmdAbout(); break;
+                case "seed": cmdSeed(); break;
+                case "theme": cmdTheme(parts); break;
+                case "quote": cmdQuote(parts); break;
+                case "tape": cmdTape(parts); break;
+                case "signals": cmdSignals(parts); break;
+                case "watch": cmdWatch(parts); break;
+                case "export": cmdExport(parts); break;
+                case "copy": cmdCopy(parts); break;
+                case "rpc": cmdRpc(parts); break;
+                case "snapshot": cmdSnapshot(parts); break;
+                default:
+                    terminal.notifyWarn("unknown cmd: " + cmd + " (try 'help')");
+            }
+        }
+
+        private void cmdHelp() {
+            terminal.println("");
+            terminal.println(Ansi.bold("COMMAND MAP"));
+            terminal.println(Ansi.dim("help") + "                show this map");
+            terminal.println(Ansi.dim("pages") + "               show page shortcuts");
+            terminal.println(Ansi.dim("quote [SYM]") + "          last quote + derived");
+            terminal.println(Ansi.dim("tape [SYM] [N]") + "       show N tape prints (default 16)");
+            terminal.println(Ansi.dim("signals [SYM] [N]") + "    show N signals (default 12)");
+            terminal.println(Ansi.dim("watch") + "               show watchlist");
+            terminal.println(Ansi.dim("watch add SYM") + "       add to watchlist");
+            terminal.println(Ansi.dim("watch rm SYM") + "        remove from watchlist");
+            terminal.println(Ansi.dim("watch clear") + "         clear watchlist");
+            terminal.println(Ansi.dim("export log|watch") + "    export data to files");
+            terminal.println(Ansi.dim("copy addr|rpc") + "       copy sample addresses/rpc endpoint");
+            terminal.println(Ansi.dim("rpc") + "                 show rpc config");
