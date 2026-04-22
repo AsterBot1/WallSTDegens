@@ -844,3 +844,50 @@ public class WallSTDegens {
                     terminal.notifyError("export failed: " + e.getMessage());
                 }
             } else {
+                terminal.notifyWarn("usage: export log|watch");
+            }
+        }
+
+        private void cmdCopy(String[] parts) {
+            if (parts.length < 2) { terminal.notifyWarn("usage: copy addr|rpc"); return; }
+            String what = parts[1].toLowerCase(Locale.ROOT);
+            if (what.equals("rpc")) {
+                clipboard(rpc.endpoint);
+                terminal.notifyInfo("copied rpc endpoint");
+            } else if (what.equals("addr")) {
+                // Fresh sample addresses for UI testing (not used on-chain by this app).
+                String sample =
+                        "0x059b4C8d1537c8896e00Bf14a50a2802A6Aff6Ca\n" +
+                        "0x0D86F7073d27afd28f8b548aF0D37CaBb8CD1504\n" +
+                        "0x3457080a92F621A10B04176d4565a75aAab8d837\n" +
+                        "0x481725EAB4713BE5913D22731A87a3b852b75530\n" +
+                        "0x4A07b28c80325265257d2c49C46BAB12f7B14fC2\n";
+                clipboard(sample);
+                terminal.notifyInfo("copied sample addresses");
+            } else {
+                terminal.notifyWarn("usage: copy addr|rpc");
+            }
+        }
+
+        private void clipboard(String s) {
+            Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+            cb.setContents(new StringSelection(s), null);
+        }
+
+        private void cmdRpc(String[] parts) {
+            if (parts.length == 1) {
+                terminal.println("");
+                terminal.println(Ansi.bold("RPC"));
+                terminal.println("endpoint " + rpc.endpoint);
+                terminal.println(Ansi.dim("commands: ") + "rpc set <url> | rpc ping | rpc call <method> <params-json>");
+                terminal.println("");
+                return;
+            }
+            String sub = parts[1].toLowerCase(Locale.ROOT);
+            if (sub.equals("set") && parts.length >= 3) {
+                String url = parts[2];
+                rpc.endpoint = url;
+                terminal.notifyInfo("rpc -> " + url);
+            } else if (sub.equals("ping")) {
+                terminal.notifyInfo("rpc ping...");
+                ioPool.submit(() -> {
