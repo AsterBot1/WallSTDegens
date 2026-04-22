@@ -703,3 +703,50 @@ public class WallSTDegens {
             terminal.println(Ansi.dim("export log|watch") + "    export data to files");
             terminal.println(Ansi.dim("copy addr|rpc") + "       copy sample addresses/rpc endpoint");
             terminal.println(Ansi.dim("rpc") + "                 show rpc config");
+            terminal.println(Ansi.dim("rpc set URL") + "         set rpc endpoint");
+            terminal.println(Ansi.dim("rpc ping") + "            health call to rpc");
+            terminal.println(Ansi.dim("snapshot SYM") + "        eth_call placeholder for onchain snapshot");
+            terminal.println(Ansi.dim("about") + "               build + environment");
+            terminal.println("");
+        }
+
+        private void cmdPages() {
+            terminal.println("");
+            terminal.println(Ansi.bold("PAGES"));
+            terminal.println(Ansi.dim("HOME") + "   overview grid / watch / tape / signals");
+            terminal.println(Ansi.dim("RISK") + "   vol, spread, funding, OI drift");
+            terminal.println(Ansi.dim("FLOW") + "   prints + imbalance, micro-lq modes");
+            terminal.println(Ansi.dim("ALPHA") + "  signals + tag heat");
+            terminal.println(Ansi.dim("OPS") + "    export + rpc + state paths");
+            terminal.println(Ansi.dim("set page <NAME>") + " via command: " + Ansi.cyan("pages set HOME|RISK|FLOW|ALPHA|OPS"));
+            terminal.println("");
+        }
+
+        private void cmdAbout() {
+            terminal.println("");
+            terminal.println(Ansi.bold("ABOUT"));
+            terminal.println("build " + store.loadOrDefault().version + "  java " + System.getProperty("java.version"));
+            terminal.println("os " + System.getProperty("os.name") + " " + System.getProperty("os.version") + "  arch " + System.getProperty("os.arch"));
+            terminal.println("vm " + System.getProperty("java.vm.name"));
+            terminal.println("pid " + ProcessHandle.current().pid());
+            terminal.println("home " + Paths.appHome());
+            terminal.println("state " + store.path);
+            terminal.println("");
+        }
+
+        private void cmdSeed() {
+            AppState st = store.loadOrDefault();
+            terminal.println("");
+            terminal.println(Ansi.bold("SEED"));
+            terminal.println("seed 0x" + Long.toHexString(st.seed));
+            terminal.println("regen: edit state file (or delete it) and restart.");
+            terminal.println("");
+        }
+
+        private void cmdTheme(String[] parts) {
+            terminal.println(Ansi.dim("theme is fixed: ")) ;
+            terminal.println("bg " + Theme.BG0 + "  fg " + Theme.FG0 + "  acc " + Theme.ACC);
+        }
+
+        private void cmdQuote(String[] parts) {
+            if (parts.length < 2) { terminal.notifyWarn("usage: quote SYM"); return; }
