@@ -327,3 +327,50 @@ public class WallSTDegens {
             ActionMap am = root.getActionMap();
 
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK), "cmd");
+            am.put("cmd", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { focusInput(); input.setText(""); } });
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), "clear");
+            am.put("clear", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { clear(); } });
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), "quit");
+            am.put("quit", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { Window w = SwingUtilities.getWindowAncestor(TerminalPanel.this); if (w != null) w.dispatchEvent(new WindowEvent(w, WindowEvent.WINDOW_CLOSING)); } });
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK), "export");
+            am.put("export", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { println(Ansi.dim("hint: ") + "export log"); focusInput(); input.setText("export log"); } });
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK), "watch");
+            am.put("watch", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { println(Ansi.dim("hint: ") + "watch"); focusInput(); input.setText("watch"); } });
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK), "rpc");
+            am.put("rpc", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { println(Ansi.dim("hint: ") + "rpc set https://..."); focusInput(); input.setText("rpc "); } });
+        }
+
+        private void remember(String line) {
+            history.addFirst(new HistoryEntry(System.currentTimeMillis(), line));
+            while (history.size() > 250) history.removeLast();
+            historyCursor = 0;
+        }
+
+        private String historyUp() {
+            if (history.isEmpty()) return null;
+            historyCursor = Math.min(historyCursor + 1, history.size());
+            int idx = historyCursor - 1;
+            int i = 0;
+            for (HistoryEntry he : history) {
+                if (i == idx) return he.line;
+                i++;
+            }
+            return null;
+        }
+
+        private String historyDown() {
+            if (history.isEmpty()) return null;
+            historyCursor = Math.max(historyCursor - 1, 0);
+            if (historyCursor == 0) return "";
+            int idx = historyCursor - 1;
+            int i = 0;
+            for (HistoryEntry he : history) {
+                if (i == idx) return he.line;
+                i++;
+            }
+            return "";
