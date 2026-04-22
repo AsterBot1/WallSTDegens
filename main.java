@@ -280,3 +280,50 @@ public class WallSTDegens {
                     } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
                         e.consume();
                         String s = historyDown();
+                        input.setText(s == null ? "" : s);
+                    } else if (e.getKeyCode() == KeyEvent.VK_TAB) {
+                        e.consume();
+                        autocomplete();
+                    }
+                }
+            });
+
+            inputRow.add(prompt, BorderLayout.WEST);
+            inputRow.add(input, BorderLayout.CENTER);
+
+            add(scroll, BorderLayout.CENTER);
+            add(inputRow, BorderLayout.SOUTH);
+        }
+
+        void setOnCommand(Consumer<String> handler) { this.onCommand = handler == null ? s -> {} : handler; }
+
+        void focusInput() { input.requestFocusInWindow(); }
+
+        void clear() { doc.clear(); }
+
+        void println(String s) {
+            doc.appendLine(s);
+            SwingUtilities.invokeLater(() -> {
+                JScrollBar v = scroll.getVerticalScrollBar();
+                v.setValue(v.getMaximum());
+            });
+        }
+
+        void printBanner(String s) {
+            for (String line : s.split("\n", -1)) {
+                doc.appendLine(line);
+            }
+        }
+
+        void onPrint(MarketPrint p) { lastPrint = p; }
+        void onSignal(MarketSignal s) { lastSignal = s; }
+
+        void notifyInfo(String msg) { println(Ansi.cyan("[i] ") + msg); }
+        void notifyWarn(String msg) { println(Ansi.yellow("[!] ") + msg); }
+        void notifyError(String msg) { println(Ansi.red("[x] ") + msg); }
+
+        void installKeymap(JRootPane root) {
+            InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ActionMap am = root.getActionMap();
+
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK), "cmd");
