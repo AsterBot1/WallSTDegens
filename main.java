@@ -1596,3 +1596,50 @@ public class WallSTDegens {
             for (int i = 0; i < line.length(); i++) {
                 char ch = line.charAt(i);
                 if (ch == '"') { inQuote = !inQuote; continue; }
+                if (!inQuote && Character.isWhitespace(ch)) {
+                    if (cur.length() > 0) { out.add(cur.toString()); cur.setLength(0); }
+                    continue;
+                }
+                cur.append(ch);
+            }
+            if (cur.length() > 0) out.add(cur.toString());
+            return out.toArray(new String[0]);
+        }
+
+        static List<String> csv(String s) {
+            if (s == null || s.isBlank()) return new ArrayList<>();
+            String[] p = s.split(",");
+            List<String> out = new ArrayList<>();
+            for (String x : p) {
+                String t = x.trim();
+                if (!t.isEmpty()) out.add(t.toUpperCase(Locale.ROOT));
+            }
+            return out;
+        }
+    }
+
+    static final class Parse {
+        static int i(String s, int def) {
+            try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        }
+        static boolean bool(String s, boolean def) {
+            if (s == null) return def;
+            if (s.equalsIgnoreCase("true")) return true;
+            if (s.equalsIgnoreCase("false")) return false;
+            return def;
+        }
+        static long lHex(String s, long def) {
+            try {
+                if (s == null) return def;
+                String t = s.trim().toLowerCase(Locale.ROOT);
+                if (t.startsWith("0x")) t = t.substring(2);
+                return Long.parseUnsignedLong(t, 16);
+            } catch (Exception e) {
+                return def;
+            }
+        }
+    }
+
+    static final class Format {
+        static final DateTimeFormatter F = DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
+        static String ts(long ms) { return F.format(Instant.ofEpochMilli(ms)); }
