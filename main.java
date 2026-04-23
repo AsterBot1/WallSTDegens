@@ -1502,3 +1502,50 @@ public class WallSTDegens {
     }
 
     // State store (simple JSON-ish serializer)
+    static final class AppState {
+        String version = "0.1.0";
+        long seed = Seed.defaultSeed();
+        String rpcEndpoint = "https://cloudflare-eth.com";
+        List<String> watchlist = new ArrayList<>();
+        String page = "HOME";
+        boolean showTape = true;
+        boolean showSignals = true;
+    }
+
+    static final class StateStore {
+        final Path path;
+        StateStore(Path path) { this.path = path; }
+
+        AppState loadOrDefault() {
+            AppState st = new AppState();
+            if (!Files.exists(path)) return st;
+            try {
+                String s = Files.readString(path, StandardCharsets.UTF_8);
+                Map<String, String> m = TinyJson.parseFlat(s);
+                if (m.containsKey("version")) st.version = m.get("version");
+                if (m.containsKey("seed")) st.seed = Parse.lHex(m.get("seed"), st.seed);
+                if (m.containsKey("rpcEndpoint")) st.rpcEndpoint = m.get("rpcEndpoint");
+                if (m.containsKey("page")) st.page = m.get("page");
+                if (m.containsKey("showTape")) st.showTape = Parse.bool(m.get("showTape"), true);
+                if (m.containsKey("showSignals")) st.showSignals = Parse.bool(m.get("showSignals"), true);
+                if (m.containsKey("watchlist")) st.watchlist = Split.csv(m.get("watchlist"));
+                return st;
+            } catch (Exception ignored) {
+                return st;
+            }
+        }
+
+        void save(AppState st) throws IOException {
+            Files.createDirectories(path.getParent());
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\n");
+            sb.append("  \"version\": ").append(Json.str(st.version)).append(",\n");
+            sb.append("  \"seed\": ").append(Json.str("0x" + Long.toHexString(st.seed))).append(",\n");
+            sb.append("  \"rpcEndpoint\": ").append(Json.str(st.rpcEndpoint)).append(",\n");
+            sb.append("  \"page\": ").append(Json.str(st.page)).append(",\n");
+            sb.append("  \"showTape\": ").append(st.showTape).append(",\n");
+            sb.append("  \"showSignals\": ").append(st.showSignals).append(",\n");
+            sb.append("  \"watchlist\": ").append(Json.str(String.join(",", st.watchlist))).append("\n");
+            sb.append("}\n");
+            Files.writeString(path, sb.toString(), StandardCharsets.UTF_8);
+        }
