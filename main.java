@@ -1314,3 +1314,50 @@ public class WallSTDegens {
             }
         }
 
+        private void stepSignals() {
+            if (!run.get()) return;
+            long now = System.currentTimeMillis();
+            String sym = symbols.get(rng.nextInt(symbols.size()));
+            MarketQuote q = quotes.get(sym);
+            if (q == null) return;
+            InstrumentProfile prof = profiles.get(sym);
+
+            double trend = q.changeBps / 10_000.0;
+            double nois = rng.nextGaussian() * (panic.get() ? 1.3 : 0.9);
+            double s = (trend * 4200.0) + (nois * 85.0);
+            if (panic.get() && rng.nextDouble() < 0.1) s += rng.nextGaussian() * 250.0;
+            int score = (int) Math.max(-9999, Math.min(9999, Math.round(s)));
+
+            String tag = tagFor(score, prof);
+            String note = noteFor(score, sym);
+            MarketSignal sig = new MarketSignal(sym, now, score, tag, note);
+            synchronized (signals) {
+                signals.addLast(sig);
+                while (signals.size() > 420) signals.removeFirst();
+            }
+            MarketListener l = listener;
+            if (l != null) l.onSignal(sig);
+        }
+
+        private String tagFor(int score, InstrumentProfile p) {
+            int a = Math.abs(score);
+            if (a > 2200) return score > 0 ? "BREAKOUT" : "DUMP";
+            if (a > 1400) return score > 0 ? "MOMO+" : "MOMO-";
+            if (a > 800) return score > 0 ? "BID" : "ASK";
+            if (a > 450) return score > 0 ? "DRIFT+" : "DRIFT-";
+            if (p.vol > 0.02 && a > 320) return score > 0 ? "WICK+" : "WICK-";
+            return "MEAN";
+        }
+
+        private String noteFor(int score, String sym) {
+            int a = Math.abs(score);
+            if (a > 2200) return sym + " tape is loud; spreads widen";
+            if (a > 1400) return "one-way flow; watch liquidation pockets";
+            if (a > 800) return "momentum edge; fade only with size";
+            if (a > 450) return "range bleed; scalp timeframes";
+            return "noise-chop; wait for better setup";
+        }
+    }
+
+    static final class InstrumentProfile {
+        final double anchor;
