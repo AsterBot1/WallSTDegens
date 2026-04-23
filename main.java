@@ -1643,3 +1643,50 @@ public class WallSTDegens {
     static final class Format {
         static final DateTimeFormatter F = DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
         static String ts(long ms) { return F.format(Instant.ofEpochMilli(ms)); }
+        static String fmt(double v, int dp) {
+            BigDecimal b = BigDecimal.valueOf(v).setScale(dp, RoundingMode.HALF_UP);
+            return b.toPlainString();
+        }
+        static String fmtSigned(double v, int dp) {
+            String s = fmt(v, dp);
+            if (!s.startsWith("-")) s = "+" + s;
+            return s;
+        }
+        static String fmtPx(double v, int dp) {
+            if (v >= 10_000) dp = Math.min(dp, 2);
+            if (v >= 1_000 && v < 10_000) dp = Math.min(dp, 3);
+            if (v < 1) dp = Math.min(dp, 8);
+            return fmt(v, dp);
+        }
+        static String compact(long v) {
+            double x = v;
+            String suf = "";
+            if (x >= 1e12) { x /= 1e12; suf = "T"; }
+            else if (x >= 1e9) { x /= 1e9; suf = "B"; }
+            else if (x >= 1e6) { x /= 1e6; suf = "M"; }
+            else if (x >= 1e3) { x /= 1e3; suf = "K"; }
+            return fmt(x, x >= 100 ? 0 : x >= 10 ? 1 : 2) + suf;
+        }
+        static String dur(long ms) {
+            long s = ms / 1000;
+            long h = s / 3600;
+            long m = (s % 3600) / 60;
+            long ss = s % 60;
+            return String.format(Locale.ROOT, "%02dh:%02dm:%02ds", h, m, ss);
+        }
+        static String mem() {
+            Runtime rt = Runtime.getRuntime();
+            long used = rt.totalMemory() - rt.freeMemory();
+            long mb = used / (1024 * 1024);
+            return mb + "MB";
+        }
+    }
+
+    static final class Seed {
+        static long defaultSeed() {
+            long t = System.nanoTime();
+            long pid = ProcessHandle.current().pid();
+            long mx = ManagementFactory.getRuntimeMXBean().getStartTime();
+            long h = 0x9E3779B97F4A7C15L;
+            h ^= Long.rotateLeft(t, 17);
+            h ^= Long.rotateLeft(pid * 0xD6E8FEB86659FD93L, 13);
