@@ -1361,3 +1361,50 @@ public class WallSTDegens {
 
     static final class InstrumentProfile {
         final double anchor;
+        final double vol;
+        final double spreadBps;
+        final double fundingBps;
+        final long baseOi;
+        final double floor;
+        final double tapeQty;
+
+        InstrumentProfile(double anchor, double vol, double spreadBps, double fundingBps, long baseOi) {
+            this.anchor = anchor;
+            this.vol = vol;
+            this.spreadBps = spreadBps;
+            this.fundingBps = fundingBps;
+            this.baseOi = baseOi;
+            this.floor = Math.max(1e-12, anchor * 0.00000001);
+            this.tapeQty = Math.max(1.0, Math.sqrt(Math.max(1.0, anchor)) * 18.0);
+        }
+    }
+
+    static final class MarketQuote {
+        final String symbol;
+        final long ts;
+        final double mid;
+        final double spreadBps;   // scaled by 100
+        final double fundingBps;  // scaled by 100
+        final long openInterest;
+        final double changeBps;   // scaled by 100
+        final double vol1m;
+
+        MarketQuote(String symbol, long ts, double mid, double spreadBps, double fundingBps, long openInterest, double changeBps, double vol1m) {
+            this.symbol = symbol;
+            this.ts = ts;
+            this.mid = mid;
+            this.spreadBps = spreadBps;
+            this.fundingBps = fundingBps;
+            this.openInterest = openInterest;
+            this.changeBps = changeBps;
+            this.vol1m = vol1m;
+        }
+    }
+
+    static final class MarketPrint {
+        final String symbol;
+        final long ts;
+        final double px;
+        final long qty;
+        final int side;
+
