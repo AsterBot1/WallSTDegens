@@ -1455,3 +1455,50 @@ public class WallSTDegens {
             String body = "{\"jsonrpc\":\"2.0\",\"id\":" + rid + ",\"method\":\"" + escape(method) + "\",\"params\":" + paramsJson + "}";
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
+                    .timeout(java.time.Duration.ofSeconds(12))
+                    .header("content-type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (res.statusCode() < 200 || res.statusCode() >= 300) throw new IOException("http " + res.statusCode());
+            return res.body();
+        }
+
+        private String escape(String s) {
+            return s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
+    }
+
+    // JSON helpers (tiny, not a parser)
+    static final class Json {
+        static String obj(Object... kv) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            for (int i = 0; i < kv.length; i += 2) {
+                if (i > 0) sb.append(",");
+                sb.append(str(String.valueOf(kv[i]))).append(":").append(val(kv[i + 1]));
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+        static String arr(Object... v) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int i = 0; i < v.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append(val(v[i]));
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        static String val(Object o) {
+            if (o == null) return "null";
+            if (o instanceof Number || o instanceof Boolean) return String.valueOf(o);
+            return str(String.valueOf(o));
+        }
+        static String str(String s) {
+            return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        }
+    }
+
+    // State store (simple JSON-ish serializer)
