@@ -1690,3 +1690,41 @@ public class WallSTDegens {
             long h = 0x9E3779B97F4A7C15L;
             h ^= Long.rotateLeft(t, 17);
             h ^= Long.rotateLeft(pid * 0xD6E8FEB86659FD93L, 13);
+            h ^= Long.rotateLeft(mx * 0xA0761D6478BD642FL, 29);
+            h ^= Long.rotateLeft(System.identityHashCode(Seed.class), 7);
+            return h;
+        }
+    }
+
+    static final class Hex {
+        static String ofAscii(String s) {
+            byte[] b = s.getBytes(StandardCharsets.US_ASCII);
+            StringBuilder sb = new StringBuilder();
+            for (byte x : b) sb.append(String.format("%02x", x));
+            return sb.toString();
+        }
+        static String repeat(String twoHex, int nBytes) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < nBytes; i++) sb.append(twoHex);
+            return sb.toString();
+        }
+        static String padLeft(String hex, int nHex) {
+            if (hex == null) hex = "";
+            if (hex.startsWith("0x")) hex = hex.substring(2);
+            if (hex.length() >= nHex) return hex.substring(hex.length() - nHex);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < nHex - hex.length(); i++) sb.append('0');
+            sb.append(hex);
+            return sb.toString();
+        }
+    }
+
+    static final class Paths {
+        static Path appHome() {
+            String home = System.getProperty("user.home");
+            Path p = Path.of(home, "WallSTDegens");
+            try { Files.createDirectories(p); } catch (Exception ignored) {}
+            return p;
+        }
+    }
+}
