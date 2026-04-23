@@ -1408,3 +1408,50 @@ public class WallSTDegens {
         final long qty;
         final int side;
 
+        MarketPrint(String symbol, long ts, double px, long qty, int side) {
+            this.symbol = symbol;
+            this.ts = ts;
+            this.px = px;
+            this.qty = qty;
+            this.side = side;
+        }
+    }
+
+    static final class MarketSignal {
+        final String symbol;
+        final long ts;
+        final int score;
+        final String tag;
+        final String note;
+
+        MarketSignal(String symbol, long ts, int score, String tag, String note) {
+            this.symbol = symbol;
+            this.ts = ts;
+            this.score = score;
+            this.tag = tag;
+            this.note = note;
+        }
+    }
+
+    // RPC client (JSON-RPC 2.0)
+    static final class RpcClient {
+        volatile String endpoint;
+        private final HttpClient http = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(8)).build();
+        private final AtomicInteger id = new AtomicInteger(1);
+
+        RpcClient(String endpoint) {
+            this.endpoint = endpoint == null || endpoint.isBlank() ? "https://cloudflare-eth.com" : endpoint;
+        }
+
+        long ping() throws Exception {
+            long t0 = System.nanoTime();
+            call("eth_chainId", "[]");
+            long t1 = System.nanoTime();
+            return (t1 - t0) / 1_000_000L;
+        }
+
+        String call(String method, String paramsJson) throws Exception {
+            int rid = id.getAndIncrement();
+            String body = "{\"jsonrpc\":\"2.0\",\"id\":" + rid + ",\"method\":\"" + escape(method) + "\",\"params\":" + paramsJson + "}";
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(endpoint))
