@@ -1267,3 +1267,50 @@ public class WallSTDegens {
                 if (pan && rng.nextDouble() < 0.04) shock += rng.nextGaussian() * vol * 4.3;
                 double mid = Math.max(prof.floor, prev.mid * (1.0 + shock));
 
+                double spr = prof.spreadBps * (pan ? 1.8 : 1.0) * (0.7 + rng.nextDouble() * 0.8);
+                double funding = prof.fundingBps * (0.4 + rng.nextDouble() * 1.2) * (pan ? 1.4 : 1.0);
+
+                long oi = prev.openInterest;
+                if (prof.baseOi > 0) {
+                    double drift = rng.nextGaussian() * (pan ? 0.009 : 0.003);
+                    oi = (long) Math.max(0, oi * (1.0 + drift));
+                    long lo = (long) (prof.baseOi * 0.45);
+                    long hi = (long) (prof.baseOi * 1.85);
+                    oi = Math.min(Math.max(oi, lo), hi);
+                }
+
+                double chBps = ((mid / prev.mid) - 1.0) * 10_000.0;
+                double vol1m = 0.85 * prev.vol1m + 0.15 * Math.abs(chBps) / 10_000.0;
+                MarketQuote q = new MarketQuote(sym, now, mid, spr * 100, funding * 100, oi, chBps * 100, vol1m);
+                quotes.put(sym, q);
+                MarketListener l = listener;
+                if (l != null) l.onQuote(q);
+            }
+        }
+
+        private void stepTape() {
+            if (!run.get()) return;
+            long now = System.currentTimeMillis();
+            int prints = panic.get() ? 5 + rng.nextInt(6) : 2 + rng.nextInt(4);
+            for (int i = 0; i < prints; i++) {
+                String sym = symbols.get(rng.nextInt(symbols.size()));
+                MarketQuote q = quotes.get(sym);
+                if (q == null) continue;
+                InstrumentProfile prof = profiles.get(sym);
+
+                double baseQty = prof.tapeQty * (panic.get() ? 1.3 : 1.0) * (0.65 + rng.nextDouble() * 1.8);
+                long qty = (long) Math.max(1, baseQty);
+                int side = rng.nextDouble() < 0.51 ? 1 : 2;
+                if (panic.get() && rng.nextDouble() < 0.13) side = rng.nextBoolean() ? 1 : 2;
+
+                double px = q.mid * (1.0 + rng.nextGaussian() * (prof.vol * 0.35));
+                MarketPrint p = new MarketPrint(sym, now, px, qty * (side == 1 ? 1 : -1), side);
+                synchronized (tape) {
+                    tape.addLast(p);
+                    while (tape.size() > 600) tape.removeFirst();
+                }
+                MarketListener l = listener;
+                if (l != null) l.onPrint(p);
+            }
+        }
+
