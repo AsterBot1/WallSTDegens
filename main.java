@@ -1549,3 +1549,50 @@ public class WallSTDegens {
             sb.append("}\n");
             Files.writeString(path, sb.toString(), StandardCharsets.UTF_8);
         }
+    }
+
+    static final class TinyJson {
+        static Map<String, String> parseFlat(String s) {
+            Map<String, String> out = new HashMap<>();
+            if (s == null) return out;
+            int i = 0;
+            while (i < s.length()) {
+                int q1 = s.indexOf('"', i);
+                if (q1 < 0) break;
+                int q2 = s.indexOf('"', q1 + 1);
+                if (q2 < 0) break;
+                String key = s.substring(q1 + 1, q2);
+                int c = s.indexOf(':', q2);
+                if (c < 0) break;
+                int vStart = c + 1;
+                while (vStart < s.length() && Character.isWhitespace(s.charAt(vStart))) vStart++;
+                String val;
+                if (vStart < s.length() && s.charAt(vStart) == '"') {
+                    int vEnd = s.indexOf('"', vStart + 1);
+                    if (vEnd < 0) break;
+                    val = s.substring(vStart + 1, vEnd);
+                    i = vEnd + 1;
+                } else {
+                    int vEnd = vStart;
+                    while (vEnd < s.length() && ",}\n\r".indexOf(s.charAt(vEnd)) < 0) vEnd++;
+                    val = s.substring(vStart, vEnd).trim();
+                    i = vEnd + 1;
+                }
+                out.put(key, val);
+            }
+            return out;
+        }
+    }
+
+    // Utils
+    static final class Split {
+        static String[] smart(String line) {
+            if (line == null) return new String[0];
+            line = line.trim();
+            if (line.isEmpty()) return new String[0];
+            List<String> out = new ArrayList<>();
+            StringBuilder cur = new StringBuilder();
+            boolean inQuote = false;
+            for (int i = 0; i < line.length(); i++) {
+                char ch = line.charAt(i);
+                if (ch == '"') { inQuote = !inQuote; continue; }
